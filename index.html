@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>AoE Deadline Clock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin-top: 2em;
+        }
+
+        .card {
+            max-width: 600px;
+            margin: 2em auto;
+            padding: 2em;
+        }
+
+        .time {
+            font-size: 1.5em;
+            margin: 1em 0;
+            font-family: "Times New Roman", Times, "Noto Serif", "Noto Serif CJK JP", serif;
+        }
+
+        .card-title {
+            font-family: "Times New Roman", Times, "Noto Serif", "Noto Serif CJK JP", serif;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <div class="container">
+        <!-- 閲覧ユーザー向けカウントダウン表示 -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h1 class="card-title mb-4"><i class="bi bi-clock-history"></i> AoE Deadline Countdown</h1>
+                <p class="time" id="deadlineTime"></p>
+                <p class="time text-primary fw-bold" id="countdown"></p>
+            </div>
+        </div>
+
+        <!-- 運営者向け設定パネル -->
+        <div class="accordion mt-4" id="adminAccordion">
+            <div class="accordion-item shadow-sm" style="border-left: 4px solid #dc3545;">
+                <h2 class="accordion-header" id="headingAdmin">
+                    <button class="accordion-button collapsed bg-light text-danger fw-bold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#collapseAdmin" aria-expanded="false"
+                        aria-controls="collapseAdmin">
+                        <i class="bi bi-link-45deg me-2"></i> Create a New Deadline URL
+                    </button>
+                </h2>
+                <div id="collapseAdmin" class="accordion-collapse collapse" aria-labelledby="headingAdmin"
+                    data-bs-parent="#adminAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-3">
+                            <label for="dateInput" class="form-label fw-bold">Set Deadline Date:</label>
+                            <input type="date" id="dateInput" class="form-control" onchange="checkDeadlineDate()" />
+                        </div>
+                        <button class="btn btn-outline-secondary" id="copyButton" onclick="copyURL()" disabled>
+                            <i class="bi bi-clipboard" id="copyIcon"></i> Copy URL
+                        </button>
+                        <p class="mt-3 text-muted small" id="generatedURL"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getDeadlineFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const dateStr = params.get("deadline");
+            if (!dateStr) {
+                // デフォルト: 現在時刻から30日後のAoE締切
+                const now = new Date();
+                const defaultDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30日後
+                return new Date(Date.UTC(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate() + 1, 11, 59, 59));
+            }
+
+            const [year, month, day] = dateStr.split("-").map(Number);
+            if (!year || !month || !day) {
+                // 無効な日付の場合も30日後をデフォルトに
+                const now = new Date();
+                const defaultDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                return new Date(Date.UTC(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate() + 1, 11, 59, 59));
+            }
+
+            return new Date(Date.UTC(year, month - 1, day + 1, 11, 59, 59)); // +1 day to reach UTC-12: 23:59
+        }
+
+        const deadlineUTC = getDeadlineFromURL().getTime();
+
+        function updateClock() {
+            const now = new Date();
+            const nowUTC = now.getTime();
+            const diff = deadlineUTC - nowUTC;
+
+            const d = new Date(deadlineUTC);
+            const localDeadline = d.toLocaleString();
+
+            document.getElementById("deadlineTime").innerHTML = `<i class="bi bi-calendar-event"></i> Your local deadline time: <br><strong>${localDeadline}</strong>`;
+
+            if (diff <= 0) {
+                document.getElementById("countdown").innerHTML = `<i class="bi bi-x-circle"></i> Deadline has passed.`;
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            document.getElementById("countdown").innerHTML =
+                `<i class="bi bi-hourglass-split"></i> Time left: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        function checkDeadlineDate() {
+            const date = document.getElementById("dateInput").value;
+            const copyButton = document.getElementById("copyButton");
+            const generatedURL = document.getElementById("generatedURL");
+
+            if (date) {
+                // 現在の日付と比較
+                const today = new Date();
+                const selectedDate = new Date(date);
+
+                // 選択された日付が今日より前の場合
+                if (selectedDate < today.setHours(0, 0, 0, 0)) {
+                    generatedURL.innerText = "Selected date is in the past. Please choose a future date.";
+                    copyButton.disabled = true;
+                    copyButton.classList.remove("btn-primary");
+                    copyButton.classList.add("btn-outline-secondary");
+                } else {
+                    const url = `${window.location.origin}${window.location.pathname}?deadline=${date}`;
+                    generatedURL.innerText = url;
+                    copyButton.disabled = false;
+                    copyButton.classList.remove("btn-outline-secondary");
+                    copyButton.classList.add("btn-primary");
+                }
+            } else {
+                generatedURL.innerText = "";
+                copyButton.disabled = true;
+                copyButton.classList.remove("btn-primary");
+                copyButton.classList.add("btn-outline-secondary");
+            }
+        }
+
+        function copyURL() {
+            const text = document.getElementById("generatedURL").innerText;
+            if (!text) return;
+
+            const copyIcon = document.getElementById("copyIcon");
+            const copyButton = document.getElementById("copyButton");
+
+            navigator.clipboard.writeText(text).then(() => {
+                // アイコンをチェックマーク付きクリップボードに変更
+                copyIcon.className = "bi bi-clipboard-check";
+                copyButton.disabled = true;
+
+                // 3秒後に元に戻す
+                setTimeout(() => {
+                    copyIcon.className = "bi bi-clipboard";
+                    copyButton.disabled = false;
+                }, 3000);
+            });
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

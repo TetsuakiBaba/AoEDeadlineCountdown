@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>AoE Deadline Clock</title>
+    <title>AoE Deadline Countdown</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -13,7 +13,7 @@
         }
 
         .card {
-            max-width: 600px;
+            /* max-width: 600px; */
             margin: 2em auto;
             padding: 2em;
         }
@@ -67,6 +67,16 @@
                 </div>
             </div>
         </div>
+        <hr>
+        <footer class="text-center mt-5">
+            <p class="text-muted">
+                &copy; 2025 Tetsuaki Baba,
+                <a href="https://github.com/TetsuakiBaba/AoEDeadlineCountdown" target="_blank" rel="noopener"
+                    class="ms-2 text-dark">
+                    <i class="bi bi-github"></i>
+                </a>
+            </p>
+        </footer>
     </div>
 
     <script>
@@ -88,7 +98,8 @@
                 return new Date(Date.UTC(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate() + 1, 11, 59, 59));
             }
 
-            return new Date(Date.UTC(year, month - 1, day + 1, 11, 59, 59)); // +1 day to reach UTC-12: 23:59
+            // AoE時間: 指定日の23:59:59 UTC-12 = 翌日の11:59:59 UTC
+            return new Date(Date.UTC(year, month - 1, day, 11, 59, 59));
         }
 
         const deadlineUTC = getDeadlineFromURL().getTime();
@@ -105,6 +116,7 @@
 
             if (diff <= 0) {
                 document.getElementById("countdown").innerHTML = `<i class="bi bi-x-circle"></i> Deadline has passed.`;
+                document.getElementById("countdown").className = "time text-danger fw-bold";
                 return;
             }
 
@@ -115,6 +127,7 @@
 
             document.getElementById("countdown").innerHTML =
                 `<i class="bi bi-hourglass-split"></i> Time left: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+            document.getElementById("countdown").className = "time text-primary fw-bold";
         }
 
         function checkDeadlineDate() {
@@ -127,7 +140,7 @@
                 const today = new Date();
                 const selectedDate = new Date(date);
 
-                // 選択された日付が今日より前の場合
+                // 選択された日付が今日より前の場合（新規URL作成時のみチェック）
                 if (selectedDate < today.setHours(0, 0, 0, 0)) {
                     generatedURL.innerText = "Selected date is in the past. Please choose a future date.";
                     copyButton.disabled = true;
@@ -172,7 +185,10 @@
         setInterval(updateClock, 1000);
     </script>
 
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
 </body>
 
 </html>

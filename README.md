@@ -1,4 +1,4 @@
-# AoE Deadline Clock
+# AoE Deadline Countdown
 
 A deadline management tool based on AoE (Anywhere on Earth) timezone. It displays a countdown to the AoE deadline (23:59:59 UTC-12) for a specified date, along with the deadline time in the user's local timezone.
 
@@ -56,7 +56,7 @@ index.html?deadline=2024-12-25
 ## File Structure
 
 ```
-AoEDeadlineClock/
+AoEDeadlineCountdown/
 ├── index.html          # Main application
 ├── README.md          # This file
 └── LICENSE            # MIT License
